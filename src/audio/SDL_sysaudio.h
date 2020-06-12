@@ -170,8 +170,8 @@ extern AudioBootStrap DUMMYAUD_bootstrap;
 #if SDL_AUDIO_DRIVER_DC
 extern AudioBootStrap DCAUD_bootstrap;
 #endif
-#if SDL_AUDIO_DRIVER_NDS
-extern AudioBootStrap NDSAUD_bootstrap;
+#if SDL_AUDIO_DRIVER_MAXMOD
+extern AudioBootStrap MAXMOD_bootstrap;
 #endif
 #if SDL_AUDIO_DRIVER_MMEAUDIO
 extern AudioBootStrap MMEAUDIO_bootstrap;
