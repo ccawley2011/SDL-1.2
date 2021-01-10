@@ -1009,6 +1009,37 @@ CheckIPod()
     fi
 }
 
+Checknds()
+{
+    AC_ARG_ENABLE(nds,
+    AC_HELP_STRING([--enable-nds], [configure SDL to work with nds [[default=no]]]),, enable_nds=no)
+
+    if test x$enable_nds = xyes; then
+        ARCH=nds
+        NDS_CFLAGS="-mthumb -mthumb-interwork -march=armv5te -mtune=arm946e-s \
+                    -ffunction-sections -fdata-sections \
+                    -I$DEVKITPRO/libnds/include -DARM9 -D__NDS__"
+        EXTRA_CFLAGS="$EXTRA_CFLAGS $NDS_CFLAGS"
+        CFLAGS="$CFLAGS $NDS_CFLAGS"
+        SDL_CFLAGS="$SDL_CFLAGS $NDS_CFLAGS"
+        SDL_LIBS="-mthumb -mthumb-interwork -march=armv5te -mtune=arm946e-s \
+                  -L${DEVKITPRO}/portlibs/nds $SDL_LIBS \
+                  -L${DEVKITPRO}/libnds/lib -lmm9 -lnds9"
+        AC_DEFINE(SDL_TIMER_NDS)
+        SOURCES="$SOURCES $srcdir/src/timer/nds/*.c"
+        have_timers=yes
+        AC_DEFINE(SDL_AUDIO_DRIVER_MAXMOD)
+        SOURCES="$SOURCES $srcdir/src/audio/maxmod/*.c"
+        have_audio=yes
+        AC_DEFINE(SDL_JOYSTICK_NDS)
+        SOURCES="$SOURCES $srcdir/src/joystick/nds/*.c"
+        have_joystick=yes
+        AC_DEFINE(SDL_VIDEO_DRIVER_NDS)
+        SOURCES="$SOURCES $srcdir/src/video/nds/*.c"
+        have_video=yes
+    fi
+}
+
 dnl Find the nanox include and library directories
 CheckNANOX()
 {
@@ -2383,6 +2414,9 @@ CheckRPATH()
 
 dnl Set up the configuration based on the host platform!
 case "$host" in
+    *arm-none-eabi*)
+        Checknds
+        ;;
     arm-*-elf*) # FIXME: Can we get more specific for iPodLinux?
         ARCH=linux
         CheckDummyVideo
