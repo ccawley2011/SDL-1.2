@@ -35,7 +35,11 @@
 
 struct SDL_PrivateVideoData {
 	int w, h;
-	void *frontBuffer, *backBuffer;
+	int bg_pitch;
+	void *buffer;
+	void *bank[2];
+	Uint16 bgcnt[2];
+	int current_bank;
 	SDL_bool touchscreen;
 	Uint32 prev_keys;
 };

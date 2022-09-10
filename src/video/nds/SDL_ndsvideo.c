@@ -172,10 +172,39 @@ SDL_Rect **NDS_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 	return (SDL_Rect **) -1;
 }
 
+static Uint16 NDS_GetBackgroundControl(int width, int height, int bpp, int *pitch) {
+	if (width <= 128 && height <= 128) {
+		*pitch = 128 * bpp;
+		return (bpp > 1) ? BG_BMP16_128x128 : BG_BMP8_128x128;
+	} else if (width <= 256 && height <= 256) {
+		*pitch = 256 * bpp;
+		return (bpp > 1) ? BG_BMP16_256x256 : BG_BMP8_256x256;
+	} else if (width <= 512 && height <= 256) {
+		*pitch = 512 * bpp;
+		return (bpp > 1) ? BG_BMP16_512x256 : BG_BMP8_512x256;
+	} else if (width <= 512 && height <= 512) {
+		*pitch = 512 * bpp;
+		return (bpp > 1) ? BG_BMP16_512x512 : BG_BMP8_512x512;
+	} else if (width <= 1024 && height <= 512 && bpp == 1) {
+		*pitch = 1024;
+		return BG_BMP8_1024x512;
+	} else if (width <= 512 && height <= 1024 && bpp == 1) {
+		*pitch = 512;
+		return BG_BMP8_512x1024;
+	} else {
+		return 0;
+	}
+}
+
 SDL_Surface *NDS_SetVideoMode(_THIS, SDL_Surface *current,
 				int width, int height, int bpp, Uint32 flags)
 {
 	Uint32 Rmask = 0, Gmask = 0, Bmask = 0, Amask = 0;
+
+	/* Set up the new mode framebuffer */
+	current->flags = flags | SDL_FULLSCREEN;
+	this->hidden->w = current->w = width;
+	this->hidden->h = current->h = height;
 
 	if (bpp > 8) {
 		bpp=16;
@@ -185,14 +214,35 @@ SDL_Surface *NDS_SetVideoMode(_THIS, SDL_Surface *current,
 		Amask = 0x00008000;
 
 		videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
-
-		REG_BG2CNT = BG_BMP16_512x512;
 	} else {
 		bpp=8;
 
 		videoSetMode(MODE_6_2D | DISPLAY_BG2_ACTIVE);
+	}
 
-		REG_BG2CNT = BG_BMP8_1024x512;
+	/* Allocate the new pixel format for the screen */
+	if (!SDL_ReallocFormat(current, bpp, Rmask, Gmask, Bmask, Amask)) {
+		SDL_SetError("Couldn't allocate new pixel format for requested mode");
+		return (NULL);
+	}
+
+	/* Free the previous buffer if one has been allocated */
+	if (this->hidden->buffer) {
+		SDL_free(this->hidden->buffer);
+		this->hidden->buffer = NULL;
+	}
+
+	this->hidden->current_bank = 0;
+	this->hidden->bank[0] = (void *)BG_BMP_RAM(0);
+	this->hidden->bgcnt[0] = NDS_GetBackgroundControl(current->w, current->h, bpp / 8, &this->hidden->bg_pitch);
+	dmaFillHalfWords(0, this->hidden->bank[0], this->hidden->bg_pitch * current->h);
+
+	if ((current->flags & SDL_DOUBLEBUF) && current->h <= 256) {
+		this->hidden->bank[1] = (void *)BG_BMP_RAM(16);
+		this->hidden->bgcnt[1] = this->hidden->bgcnt[0] | BG_MAP_BASE(16);
+		dmaFillHalfWords(0, this->hidden->bank[1], this->hidden->bg_pitch * current->h);
+	} else {
+		current->flags &= ~(SDL_DOUBLEBUF);
 	}
 
 	REG_BG2PA = ((width / 256) << 8) | (width % 256) ;
@@ -201,33 +251,28 @@ SDL_Surface *NDS_SetVideoMode(_THIS, SDL_Surface *current,
 	REG_BG2PD = ((height / 192) << 8) | ((height % 192) + (height % 192) / 3) ;
 	REG_BG2X = 0;
 	REG_BG2Y = 0;
+	REG_BG2CNT = this->hidden->bgcnt[0];
 
-	this->hidden->frontBuffer = BG_BMP_RAM(0);
-	SDL_memset(this->hidden->frontBuffer, 0, 1024 * 512);
-
-	/* Allocate the new pixel format for the screen */
-	if (!SDL_ReallocFormat(current, bpp, Rmask, Gmask, Bmask, Amask)) {
-		SDL_SetError("Couldn't allocate new pixel format for requested mode");
-		return (NULL);
-	}
-
-	/* Set up the new mode framebuffer */
-	current->flags = flags | SDL_FULLSCREEN | SDL_HWSURFACE | (bpp <= 8 ? SDL_DOUBLEBUF : 0);
-	this->hidden->w = current->w = width;
-	this->hidden->h = current->h = height;
-	current->pitch = 1024;
-
-	if (flags & SDL_DOUBLEBUF) { 
-		if (!this->hidden->backBuffer) {
-			this->hidden->backBuffer = SDL_malloc(1024 * 512);
+	/* TODO: The DSi apparently supports 8-bit writes to VRAM. Investigate? */
+	if ((current->flags & SDL_HWSURFACE) && bpp > 8) {
+		if (current->flags & SDL_DOUBLEBUF) {
+			REG_BG2CNT = this->hidden->bgcnt[1];
 		}
-		current->pixels = this->hidden->backBuffer;
+
+		current->pixels = this->hidden->bank[0];
+		current->pitch = this->hidden->bg_pitch;
 	} else {
-		if (this->hidden->backBuffer) {
-			SDL_free(this->hidden->backBuffer);
-			this->hidden->backBuffer = NULL;
+		this->hidden->buffer = SDL_malloc(width * height * (bpp / 8));
+		if (!this->hidden->buffer) {
+			SDL_SetError("Couldn't allocate buffer for requested mode");
+			return (NULL);
 		}
-		current->pixels = this->hidden->frontBuffer;
+		SDL_memset(this->hidden->buffer, 0, width * height * (bpp / 8));
+
+		current->pixels = this->hidden->buffer;
+		current->pitch = width * (bpp / 8);
+		current->flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF);
+		current->flags |= SDL_SWSURFACE;
 	}
 
 	if (flags & SDL_BOTTOMSCR) {
@@ -241,12 +286,15 @@ SDL_Surface *NDS_SetVideoMode(_THIS, SDL_Surface *current,
 	return current;
 }
 
+/* We don't actually allow hardware surfaces other than the main one */
 static int NDS_AllocHWSurface(_THIS, SDL_Surface *surface)
 {
-	return 0;
+	return(-1);
 }
+
 static void NDS_FreeHWSurface(_THIS, SDL_Surface *surface)
 {
+	return;
 }
 
 /* We need to wait for vertical retrace on page flipped displays */
@@ -257,23 +305,42 @@ static int NDS_LockHWSurface(_THIS, SDL_Surface *surface)
 
 static void NDS_UnlockHWSurface(_THIS, SDL_Surface *surface)
 {
+	return;
 }
 
 static int NDS_FlipHWSurface(_THIS, SDL_Surface *surface)
 {
-	if (this->hidden->backBuffer) {
-		while (REG_VCOUNT != 192);
-		while (REG_VCOUNT == 192);
+	REG_BG2CNT = this->hidden->bgcnt[this->hidden->current_bank];
+	this->hidden->current_bank ^= 1;
+	surface->pixels = this->hidden->bank[this->hidden->current_bank];
 
-		dmaCopyAsynch(this->hidden->backBuffer, this->hidden->frontBuffer, 1024 * 512);
-	}
+	/* Wait for Vsync */
+	while (REG_VCOUNT != 192);
+	while (REG_VCOUNT == 192);
 
 	return 0;
 }
 
 static void NDS_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 {
-	/* do nothing. */
+	int j;
+	unsigned char *to, *from;
+	int pitch = this->screen->pitch;
+	int row;
+	int xmult = this->screen->format->BytesPerPixel;
+
+	for (j = 0; j < numrects; j++)
+	{
+		from = (Uint8 *)this->screen->pixels + rects->x * xmult + rects->y * pitch;
+		to  = (Uint8 *)this->hidden->bank[this->hidden->current_bank] + rects->x * xmult + rects->y * this->hidden->bg_pitch;
+		for (row = 0; row < rects->h; row++)
+		{
+			dmaCopy(from, to, rects->w * xmult);
+			from += pitch;
+			to += this->hidden->bg_pitch;
+		}
+		rects++;
+	}
 }
 
 int NDS_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
@@ -295,8 +362,8 @@ int NDS_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 */
 void NDS_VideoQuit(_THIS)
 {
-	if (this->hidden->backBuffer) {
-		SDL_free(this->hidden->backBuffer);
-		this->hidden->backBuffer = NULL;
+	if (this->hidden->buffer) {
+		SDL_free(this->hidden->buffer);
+		this->hidden->buffer = NULL;
 	}
 }
