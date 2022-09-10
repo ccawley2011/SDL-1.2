@@ -1,4 +1,4 @@
-#LibSDL 1.2.12
+#LibSDL 1.2.16
 #DS porting by Troy Davis(GPF)
 
 
@@ -21,19 +21,16 @@ TESTNDS = $(TESTELFS:.elf=.nds)
 
 SUBDIRS=
 
-CC=arm-none-eabi-gcc
-CXX=arm-none-eabi-g++
-LDSHARED=$(CXX)
-AR=arm-none-eabi-ar rc
-RANLIB=arm-none-eabi-ranlib
+CC=$(DEVKITARM)/bin/arm-none-eabi-gcc
+LDSHARED=$(CC)
+AR=$(DEVKITARM)/bin/arm-none-eabi-ar rc
+RANLIB=$(DEVKITARM)/bin/arm-none-eabi-ranlib
 
 ARCH = -mthumb -mthumb-interwork -march=armv5te -mtune=arm946e-s
 CFLAGS = $(ARCH) -O2 -Wall -Wwrite-strings -Wno-format -Wpointer-arith
 CPPFLAGS = -DARM9 -D__NDS__ -I$(DEVKITPRO)/libnds/include -Iinclude
 LDFLAGS = -specs=ds_arm9.specs -g $(ARCH) -L$(DEVKITPRO)/libnds/lib
-LIBS = -lmm9 -lnds9
-
-CXXFLAGS += $(CFLAGS)
+LIBS = -lmm9 -lnds9 -lm
 
 all: libSDL.a $(TESTNDS)
 
