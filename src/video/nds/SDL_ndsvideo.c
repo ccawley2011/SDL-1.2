@@ -151,10 +151,7 @@ int NDS_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	vformat->BytesPerPixel = 1;
 	vformat->Rmask = vformat->Gmask = vformat->Bmask = 0;
 
-	/* set the sub background up for text display (we could just print to one
-	 * of the main display text backgrounds just as easily
-	 * sub bg 0 will be used to print text
-	 */
+	videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 
 	vramSetPrimaryBanks(VRAM_A_MAIN_BG, VRAM_B_MAIN_BG, VRAM_C_MAIN_BG, VRAM_D_MAIN_BG);
@@ -212,12 +209,8 @@ SDL_Surface *NDS_SetVideoMode(_THIS, SDL_Surface *current,
 		Gmask = 0x000003E0;
 		Bmask = 0x00007C00;
 		Amask = 0x00008000;
-
-		videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
 	} else {
 		bpp=8;
-
-		videoSetMode(MODE_6_2D | DISPLAY_BG2_ACTIVE);
 	}
 
 	/* Allocate the new pixel format for the screen */
