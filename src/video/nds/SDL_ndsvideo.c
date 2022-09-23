@@ -255,15 +255,12 @@ SDL_Surface *NDS_SetVideoMode(_THIS, SDL_Surface *current,
 		current->pixels = this->hidden->bank[0];
 		current->pitch = this->hidden->bg_pitch;
 	} else {
-		this->hidden->buffer = SDL_malloc(width * height * (bpp / 8));
+		current->pitch = SDL_CalculatePitch(current);
+		current->pixels = this->hidden->buffer = SDL_calloc(height, current->pitch);
 		if (!this->hidden->buffer) {
 			SDL_SetError("Couldn't allocate buffer for requested mode");
 			return (NULL);
 		}
-		SDL_memset(this->hidden->buffer, 0, width * height * (bpp / 8));
-
-		current->pixels = this->hidden->buffer;
-		current->pitch = width * (bpp / 8);
 		current->flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF);
 		current->flags |= SDL_SWSURFACE;
 	}
@@ -318,21 +315,40 @@ static void NDS_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 {
 	int j;
 	unsigned char *to, *from;
-	int pitch = this->screen->pitch;
-	int row;
-	int xmult = this->screen->format->BytesPerPixel;
+	unsigned int pitch = this->screen->pitch;
+	unsigned int row;
+	unsigned int xmult = this->screen->format->BytesPerPixel;
+	unsigned int rowsize;
 
-	for (j = 0; j < numrects; j++)
+	for (j = 0; j < numrects; j++, rects++)
 	{
+		/* Avoid crashes when attempting to DMA copy 0 bytes */
+		if (rects->w == 0 || rects->h == 0)
+			continue;
+
 		from = (Uint8 *)this->screen->pixels + rects->x * xmult + rects->y * pitch;
 		to  = (Uint8 *)this->hidden->bank[this->hidden->current_bank] + rects->x * xmult + rects->y * this->hidden->bg_pitch;
-		for (row = 0; row < rects->h; row++)
-		{
-			dmaCopy(from, to, rects->w * xmult);
-			from += pitch;
-			to += this->hidden->bg_pitch;
+		rowsize = rects->w * xmult;
+
+		/* Ensure that all DMA transfers are halfword aligned */
+		if (((uintptr_t)to % 2) == 1) {
+			from -= xmult;
+			to -= xmult;
+			rowsize += xmult;
 		}
-		rects++;
+		if ((rowsize % 2) == 1)
+			rowsize += 1;
+
+		if (this->hidden->bg_pitch == pitch && rowsize == pitch) {
+			dmaCopy(from, to, pitch * rects->h);
+		} else {
+			for (row = 0; row < rects->h; row++)
+			{
+				dmaCopy(from, to, rowsize);
+				from += pitch;
+				to += this->hidden->bg_pitch;
+			}
+		}
 	}
 }
 
