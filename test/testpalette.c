@@ -18,8 +18,13 @@
 #include "SDL.h"
 
 /* screen size */
+#ifdef SDL_VIDEO_DRIVER_VGA
+#define SCRW 320
+#define SCRH 200
+#else
 #define SCRW 640
 #define SCRH 480
+#endif
 
 #define NBOATS 5
 #define SPEED 2

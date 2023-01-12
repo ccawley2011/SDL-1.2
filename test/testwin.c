@@ -254,6 +254,11 @@ int main(int argc, char *argv[])
 	h = 320;
 	desired_bpp = 8;
 	video_flags = SDL_FULLSCREEN;
+#elif defined(SDL_VIDEO_DRIVER_VGA)
+	w = 320;
+	h = 200;
+	desired_bpp = 0;
+	video_flags = 0;
 #else
 	w = 640;
 	h = 480;

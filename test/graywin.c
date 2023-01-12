@@ -146,8 +146,13 @@ int main(int argc, char *argv[])
 	}
 
 	/* See if we try to get a hardware colormap */
+#ifdef SDL_VIDEO_DRIVER_VGA
+	width = 320;
+	height = 200;
+#else
 	width = 640;
 	height = 480;
+#endif
 	bpp = 8;
 	videoflags = SDL_SWSURFACE;
 	while ( argc > 1 ) {

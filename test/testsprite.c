@@ -168,8 +168,13 @@ int main(int argc, char *argv[])
 
 	numsprites = NUM_SPRITES;
 	videoflags = SDL_SWSURFACE|SDL_ANYFORMAT;
+#ifdef SDL_VIDEO_DRIVER_VGA
+	width = 320;
+	height = 200;
+#else
 	width = 640;
 	height = 480;
+#endif
 	video_bpp = 8;
 	debug_flip = 0;
 	while ( argc > 1 ) {

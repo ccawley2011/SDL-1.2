@@ -125,6 +125,9 @@ static VideoBootStrap *bootstrap[] = {
 #if SDL_VIDEO_DRIVER_OS2FS
 	&OS2FSLib_bootstrap,
 #endif
+#if SDL_VIDEO_DRIVER_VGA
+	&VGA_bootstrap,
+#endif
 #if SDL_VIDEO_DRIVER_AALIB
 	&AALIB_bootstrap,
 #endif

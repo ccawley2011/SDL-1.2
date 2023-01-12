@@ -35,8 +35,13 @@ int get_video_args(char *argv[], int *w, int *h, int *bpp, Uint32 *flags)
 {
 	int i;
 
+#ifdef SDL_VIDEO_DRIVER_VGA
+	*w = 320;
+	*h = 200;
+#else
 	*w = 640;
 	*h = 480;
+#endif
 	*bpp = 0;
 	*flags = SDL_SWSURFACE;
 

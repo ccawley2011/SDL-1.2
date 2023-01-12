@@ -409,6 +409,9 @@ extern VideoBootStrap OS2VMANFS_bootstrap;
 #if SDL_VIDEO_DRIVER_OS2FS
 extern VideoBootStrap OS2FSLib_bootstrap;
 #endif
+#if SDL_VIDEO_DRIVER_VGA
+extern VideoBootStrap VGA_bootstrap;
+#endif
 #if SDL_VIDEO_DRIVER_AALIB
 extern VideoBootStrap AALIB_bootstrap;
 #endif

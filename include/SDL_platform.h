@@ -74,6 +74,10 @@
 #undef __MACOS__
 #define __MACOS__	1
 #endif
+#if defined(_DOS) || defined(__MSDOS__)
+#undef __MSDOS__
+#define __MSDOS__	1
+#endif
 #if defined(__NetBSD__)
 #undef __NETBSD__
 #define __NETBSD__	1
