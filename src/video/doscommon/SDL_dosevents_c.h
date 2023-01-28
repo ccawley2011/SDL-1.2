@@ -21,17 +21,25 @@
 */
 #include "SDL_config.h"
 
-#ifndef _SDL_vgavideo_h
-#define _SDL_vgavideo_h
+#ifndef _SDL_dosevents_h
+#define _SDL_dosevents_h
 
-#include "../doscommon/SDL_dosevents_c.h"
+#define INTERRUPT_ATTRIBUTES __interrupt __far
 
-struct SDL_PrivateVideoData {
-    DOS_EventData eventdata;
+#define KEYBUF_SIZE 256
+#define KEYBUF_MASK (KEYBUF_SIZE-1)
 
-    unsigned char *buffer;
-    unsigned char *vgamem;
-};
+typedef struct {
+    void (INTERRUPT_ATTRIBUTES *prev_kbd_int)();
+    Uint8 keybuf[KEYBUF_SIZE];
+    int key_write_pos;
+    int key_read_pos;
+    SDL_bool special;
+} DOS_EventData;
 
+extern int  DOS_InitEvents(DOS_EventData *this);
+extern void DOS_InitOSKeymap(DOS_EventData *this);
+extern void DOS_PumpEvents(DOS_EventData *this);
+extern void DOS_QuitEvents(DOS_EventData *this);
 
 #endif

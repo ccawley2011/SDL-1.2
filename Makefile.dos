@@ -57,7 +57,7 @@ videoobjs = SDL_blit.obj SDL_blit_0.obj SDL_blit_1.obj SDL_blit_A.obj &
             SDL_blit_N.obj SDL_bmp.obj SDL_cursor.obj SDL_gamma.obj &
             SDL_pixels.obj SDL_RLEaccel.obj SDL_stretch.obj SDL_surface.obj &
             SDL_video.obj SDL_yuv.obj SDL_yuv_mmx.obj SDL_yuv_sw.obj &
-            SDL_vgavideo.obj &
+            SDL_dosevents.obj SDL_vgavideo.obj &
             SDL_nullevents.obj SDL_nullmouse.obj SDL_nullvideo.obj
 
 stdlibobjs = SDL_iconv.obj SDL_malloc.obj SDL_qsort.obj SDL_string.obj
@@ -76,7 +76,7 @@ object_files= SDL.obj SDL_error.obj SDL_fatal.obj &
 
 .asm: src/hermes
 .c: src;src/audio;src/cdrom;src/cdrom/dummy;src/cpuinfo;src/events;src/file;src/joystick;src/joystick/dummy;src/loadso/dummy;src/stdlib;src/thread;src/thread/generic;src/timer;src/timer/dos;src/video
-.c: src/audio/dummy;src/audio/disk;src/video/dummy;src/video/dosvga
+.c: src/audio/dummy;src/audio/disk;src/video/dummy;src/video/doscommon;src/video/dosvga
 
 .c.obj:
 	wcc386 $(CFLAGS) -fo=$^@ $<

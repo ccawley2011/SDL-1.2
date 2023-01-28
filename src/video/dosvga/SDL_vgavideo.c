@@ -26,6 +26,7 @@
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
 #include "SDL_vgavideo.h"
+#include "../doscommon/SDL_dosevents_c.h"
 
 #include <dos.h>
 #include <conio.h>
@@ -38,10 +39,8 @@ static SDL_Surface *VGA_SetVideoMode (_THIS, SDL_Surface *current, int width, in
 static int VGA_SetColors (_THIS, int firstcolor, int ncolors, SDL_Color *colors);
 static void VGA_UpdateRects (_THIS, int nrects, SDL_Rect *rects);
 static void VGA_VideoQuit (_THIS);
-
-/* TODO: Keyboard and Mouse support */
-static void VGA_InitOSKeymap(_THIS) { (void)this; }
-static void VGA_PumpEvents(_THIS) { (void)this; }
+static void VGA_InitOSKeymap(_THIS);
+static void VGA_PumpEvents(_THIS);
 
 static int VGA_Available() 
 {
@@ -96,6 +95,10 @@ static int VGA_VideoInit(_THIS, SDL_PixelFormat *vformat)
     vformat->BitsPerPixel = 8;
     this->info.current_w = 320;
     this->info.current_h = 200;
+
+    if (DOS_InitEvents(&this->hidden->eventdata)) {
+        return -1;
+    }
 
     return 0;
 }
@@ -165,6 +168,8 @@ static void VGA_VideoQuit(_THIS)
         this->hidden->buffer = NULL;
     }
 
+    DOS_QuitEvents(&this->hidden->eventdata);
+
     /* Switch to 80x25 text mode */
     VGA_SetMode(0x03);
 }
@@ -194,4 +199,14 @@ static void VGA_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
             dst += 320;
         }
     }
+}
+
+static void VGA_InitOSKeymap(_THIS)
+{
+    DOS_InitOSKeymap(&this->hidden->eventdata);
+}
+
+static void VGA_PumpEvents(_THIS)
+{
+    DOS_PumpEvents(&this->hidden->eventdata);
 }
