@@ -2894,6 +2894,12 @@ case "$host" in
             SOURCES="$SOURCES $srcdir/src/joystick/riscos/*.c"
             have_joystick=yes
         fi
+        # Set up files for the cdrom library
+        if test x$enable_cdrom = xyes; then
+            AC_DEFINE(SDL_CDROM_RISCOS)
+            SOURCES="$SOURCES $srcdir/src/cdrom/riscos/*.c"
+            have_cdrom=yes
+        fi
         # Set up files for the timer library
         if test x$enable_timers = xyes; then
             AC_DEFINE(SDL_TIMER_RISCOS)

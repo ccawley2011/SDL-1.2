@@ -207,6 +207,7 @@
 #undef SDL_CDROM_OS2
 #undef SDL_CDROM_OSF
 #undef SDL_CDROM_QNX
+#undef SDL_CDROM_RISCOS
 #undef SDL_CDROM_WIN32
 
 /* Enable various input drivers */
