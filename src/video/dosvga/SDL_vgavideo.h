@@ -29,6 +29,7 @@
 struct SDL_PrivateVideoData {
     DOS_EventData eventdata;
 
+    SDL_bool switched_mode;
     unsigned char *buffer;
     unsigned char *vgamem;
 };

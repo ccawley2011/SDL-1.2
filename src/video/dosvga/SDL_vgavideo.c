@@ -132,6 +132,7 @@ static SDL_Surface *VGA_SetVideoMode(_THIS, SDL_Surface *current, int width, int
 
     /* Switch to 256 colour mode */
     VGA_SetMode(0x13);
+    this->hidden->switched_mode = SDL_TRUE;
 
     if (!SDL_ReallocFormat(current, 8, 0, 0, 0, 0)) {
 	return NULL;
@@ -171,7 +172,10 @@ static void VGA_VideoQuit(_THIS)
     DOS_QuitEvents(&this->hidden->eventdata);
 
     /* Switch to 80x25 text mode */
-    VGA_SetMode(0x03);
+    if (this->hidden->switched_mode) {
+        VGA_SetMode(0x03);
+        this->hidden->switched_mode = SDL_FALSE;
+    }
 }
 
 static void VGA_UpdateRects(_THIS, int numrects, SDL_Rect *rects) 
