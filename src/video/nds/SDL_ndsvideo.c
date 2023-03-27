@@ -33,6 +33,7 @@
 
 #include "SDL_ndsvideo.h"
 #include "SDL_ndsevents_c.h"
+#include "SDL_ndsmouse_c.h"
 
 #define NDSVID_DRIVER_NAME "nds"
 
@@ -130,6 +131,10 @@ static SDL_VideoDevice *NDS_CreateDevice(int devindex)
 	device->IconifyWindow = NULL;
 	device->GrabInput = NULL;
 	device->GetWMInfo = NULL;
+	device->FreeWMCursor = NDS_FreeWMCursor;
+	device->CreateWMCursor = NDS_CreateWMCursor;
+	device->ShowWMCursor = NDS_ShowWMCursor;
+	device->MoveWMCursor = NDS_MoveWMCursor;
 	device->InitOSKeymap = NDS_InitOSKeymap;
 	device->PumpEvents = NDS_PumpEvents;
 	device->info.blit_hw = SDL_TRUE;
@@ -155,8 +160,17 @@ int NDS_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 
 	vramSetPrimaryBanks(VRAM_A_MAIN_BG, VRAM_B_MAIN_BG, VRAM_C_MAIN_BG, VRAM_D_MAIN_BG);
+	vramSetBankE(VRAM_E_MAIN_SPRITE);
 	vramSetBankH(VRAM_H_SUB_BG);
 	vramSetBankI(VRAM_I_LCD);
+
+	oamInit(&oamMain, SpriteMapping_1D_32, 0);
+
+	/* Cursor palette */
+	SPRITE_PALETTE[0] = RGB15(31, 31, 31);                     /* Transparent */
+	SPRITE_PALETTE[1] = RGB15(31, 31, 31); /* White */
+	SPRITE_PALETTE[2] = RGB15(0,  0,  0);  /* Inverted color if possible, black if not. */
+	SPRITE_PALETTE[3] = RGB15(0,  0,  0);  /* Black */
 
 	consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 15, 0, false, true);
 

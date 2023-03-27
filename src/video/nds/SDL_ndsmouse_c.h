@@ -21,28 +21,10 @@
 */
 #include "SDL_config.h"
 
-#ifndef _SDL_ndsvideo_h
-#define _SDL_ndsvideo_h
+#include "SDL_ndsvideo.h"
 
-#include "SDL_mouse.h"
-#include "../SDL_sysvideo.h"
-
-/* Hidden "this" pointer for the video functions */
-#define _THIS	SDL_VideoDevice *this
-
-
-/* Private display data */
-
-struct SDL_PrivateVideoData {
-	int w, h;
-	int bg_pitch;
-	void *buffer;
-	void *bank[2];
-	Uint16 bgcnt[2];
-	int current_bank;
-	SDL_bool touchscreen;
-	int cursor_x, cursor_y;
-	Uint32 prev_keys;
-};
-
-#endif /* _SDL_ndsvideo_h */
+/* Functions to be exported */
+extern void NDS_FreeWMCursor(_THIS, WMcursor *cursor);
+extern WMcursor *NDS_CreateWMCursor(_THIS, Uint8 *data, Uint8 *mask, int w, int h, int hot_x, int hot_y);
+extern int NDS_ShowWMCursor(_THIS, WMcursor *cursor);
+extern void NDS_MoveWMCursor(_THIS, int x, int y);
