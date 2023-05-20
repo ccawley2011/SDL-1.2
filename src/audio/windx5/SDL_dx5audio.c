@@ -51,44 +51,51 @@ static void DX5_CloseAudio(_THIS);
 static int Audio_Available(void)
 {
 	HINSTANCE DSoundDLL;
+	OSVERSIONINFO ver;
 	int dsound_ok;
 
-	/* Version check DSOUND.DLL (Is DirectX okay?) */
-	dsound_ok = 0;
-	DSoundDLL = LoadLibrary(TEXT("DSOUND.DLL"));
-	if ( DSoundDLL != NULL ) {
-		/* We just use basic DirectSound, we're okay */
-		/* Yay! */
-		/* Unfortunately, the sound drivers on NT have
-		   higher latencies than the audio buffers used
-		   by many SDL applications, so there are gaps
-		   in the audio - it sounds terrible.  Punt for now.
-		 */
-		OSVERSIONINFO ver;
-		ver.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-		GetVersionEx(&ver);
-		switch (ver.dwPlatformId) {
-			case VER_PLATFORM_WIN32_NT:
-				if ( ver.dwMajorVersion > 4 ) {
-					/* Win2K */
-					dsound_ok = 1;
-				} else {
-					/* WinNT */
-					dsound_ok = 0;
-				}
-				break;
-			default:
-				/* Win95 or Win98 */
-				dsound_ok = 1;
-				break;
+	/* Unfortunately, the sound drivers on NT have
+	   higher latencies than the audio buffers used
+	   by many SDL applications, so there are gaps
+	   in the audio - it sounds terrible.  Punt for now.
+
+	   Windows 3.1 displays a message box if LoadLibrary fails, so
+	   don't attempt to load DirectX there.
+	 */
+	ver.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+	GetVersionEx(&ver);
+	switch (ver.dwPlatformId) {
+	case VER_PLATFORM_WIN32_NT:
+		if ( ver.dwMajorVersion > 4 ) {
+			/* Win2K */
+			dsound_ok = 1;
+		} else {
+			/* WinNT */
+			dsound_ok = 0;
 		}
-		/* Now check for DirectX 5 or better - otherwise
-		 * we will fail later in DX5_OpenAudio without a chance
-		 * to fall back to the DIB driver. */
-		if (dsound_ok) {
+		break;
+	case VER_PLATFORM_WIN32s:
+		/* Windows 3.1 */
+		dsound_ok = 0;
+		break;
+	default:
+		/* Win95 or Win98 */
+		dsound_ok = 1;
+		break;
+	}
+
+	/* Now check for DirectX 5 or better - otherwise
+	 * we will fail later in DX5_OpenAudio without a chance
+	 * to fall back to the DIB driver. */
+	if (dsound_ok) {
+		dsound_ok = 0;
+		DSoundDLL = LoadLibrary(TEXT("DSOUND.DLL"));
+		if ( DSoundDLL != NULL ) {
+			/* We just use basic DirectSound, we're okay */
+			/* Yay! */
 			/* DirectSoundCaptureCreate was added in DX5 */
-			if (!GetProcAddress(DSoundDLL, TEXT("DirectSoundCaptureCreate")))
-				dsound_ok = 0;
+			if (GetProcAddress(DSoundDLL, TEXT("DirectSoundCaptureCreate")))
+				dsound_ok = 1;
 
 		}
 		/* Clean up.. */

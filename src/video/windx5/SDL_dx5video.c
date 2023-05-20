@@ -459,8 +459,19 @@ static int DX5_Available(void)
 {
 	HINSTANCE DInputDLL;
 	HINSTANCE DDrawDLL;
+	OSVERSIONINFO ver;
 	int dinput_ok;
 	int ddraw_ok;
+
+	/*
+	 * Windows 3.1 displays a message box if LoadLibrary fails, so
+	 * don't attempt to load DirectX there.
+	 */
+	ver.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+	GetVersionEx(&ver);
+	if (ver.dwPlatformId == VER_PLATFORM_WIN32s) {
+		return 0;
+	}
 
 	/* Version check DINPUT.DLL and DDRAW.DLL (Is DirectX okay?) */
 	dinput_ok = 0;

@@ -330,6 +330,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR szCmdLine, int sw)
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 #endif
 {
+	OSVERSIONINFO ver;
 	HMODULE handle;
 	char **argv;
 	int argc;
@@ -346,10 +347,18 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 	/* Start up DDHELP.EXE before opening any files, so DDHELP doesn't
 	   keep them open.  This is a hack.. hopefully it will be fixed 
 	   someday.  DDHELP.EXE starts up the first time DDRAW.DLL is loaded.
+
+	   Windows 3.1 displays a message box if LoadLibrary fails, so
+	   don't attempt to load DirectX there.
 	 */
-	handle = LoadLibrary(TEXT("DDRAW.DLL"));
-	if ( handle != NULL ) {
-		FreeLibrary(handle);
+
+	ver.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+	GetVersionEx(&ver);
+	if (ver.dwPlatformId != VER_PLATFORM_WIN32s) {
+		handle = LoadLibrary(TEXT("DDRAW.DLL"));
+		if ( handle != NULL ) {
+			FreeLibrary(handle);
+		}
 	}
 
 	/* Check for stdio redirect settings and do the redirection */

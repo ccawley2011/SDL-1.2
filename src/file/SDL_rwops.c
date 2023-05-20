@@ -114,8 +114,10 @@ static int SDLCALL win32_file_open(SDL_RWops *context, const char *filename, con
 		osVerInfo.dwOSVersionInfoSize = sizeof(osVerInfo);
 		if (!GetVersionEx(&osVerInfo)) {
 			unicode_support = 0;
+		} else if (osVerInfo.dwPlatformId == VER_PLATFORM_WIN32s) {
+			unicode_support = 0;  /* Windows 3.1 */
 		} else if (osVerInfo.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS) {
-			unicode_support = 1;  /* Not Win95/98/ME. */
+			unicode_support = 1;  /* Not Win3.1/95/98/ME. */
 		} else {
 			unicode_support = 0;
 		}
