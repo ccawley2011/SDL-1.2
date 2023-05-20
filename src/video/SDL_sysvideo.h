@@ -365,6 +365,9 @@ extern VideoBootStrap GAPI_bootstrap;
 #if SDL_VIDEO_DRIVER_WINDIB
 extern VideoBootStrap WINDIB_bootstrap;
 #endif
+#if SDL_VIDEO_DRIVER_WING
+extern VideoBootStrap WING_bootstrap;
+#endif
 #if SDL_VIDEO_DRIVER_DDRAW
 extern VideoBootStrap DIRECTX_bootstrap;
 #endif

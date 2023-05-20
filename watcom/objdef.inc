@@ -63,7 +63,8 @@ OBJS  = $(OUTDIR)/SDL.obj &
 	$(OUTDIR)/SDL_yuv_sw.obj &
 	$(OUTDIR)/SDL_yuv_mmx.obj &
 	$(OUTDIR)/SDL_dummyaudio.obj &
-	$(OUTDIR)/SDL_cpuinfo.obj
+	$(OUTDIR)/SDL_cpuinfo.obj &
+	$(OUTDIR)/SDL_wingvideo.obj
 
 ASMOBJS=$(OUTDIR)/x86_main.obj &
 	$(OUTDIR)/x86p_16.obj &
@@ -129,6 +130,7 @@ $(OUTDIR)/SDL_timer.obj :     .AUTODEPEND $(SRCDIR)/timer/SDL_timer.c ; $(COMPIL
 $(OUTDIR)/SDL_video.obj :     .AUTODEPEND $(SRCDIR)/video/SDL_video.c ; $(COMPILE_C)
 $(OUTDIR)/SDL_wave.obj :      .AUTODEPEND $(SRCDIR)/audio/SDL_wave.c ; $(COMPILE_C)
 $(OUTDIR)/SDL_wingl.obj :     .AUTODEPEND $(SRCDIR)/video/wincommon/SDL_wingl.c ; $(COMPILE_C)
+$(OUTDIR)/SDL_wingvideo.obj : .AUTODEPEND $(SRCDIR)/video/wing/SDL_wingvideo.c ; $(COMPILE_C)
 $(OUTDIR)/SDL_yuv.obj :       .AUTODEPEND $(SRCDIR)/video/SDL_yuv.c ; $(COMPILE_C)
 $(OUTDIR)/SDL_yuv_sw.obj :    .AUTODEPEND $(SRCDIR)/video/SDL_yuv_sw.c ; $(COMPILE_C)
 $(OUTDIR)/SDL_yuv_mmx.obj :   .AUTODEPEND $(SRCDIR)/video/SDL_yuv_mmx.c ; $(COMPILE_C)

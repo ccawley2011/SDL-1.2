@@ -43,7 +43,7 @@
 #  endif
 # elif defined(SDL_VIDEO_DRIVER_NANOX)
 #  include <microwin/nano-X.h>
-# elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW) || defined(SDL_VIDEO_DRIVER_GAPI)
+# elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW) || defined(SDL_VIDEO_DRIVER_GAPI) || defined(SDL_VIDEO_DRIVER_WING)
 #  ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
 #  endif
@@ -138,7 +138,7 @@ struct SDL_SysWMinfo {
 	GR_WINDOW_ID window ;	/* The display window */
 };
 
-#elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW) || defined(SDL_VIDEO_DRIVER_GAPI)
+#elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW) || defined(SDL_VIDEO_DRIVER_GAPI) || defined(SDL_VIDEO_DRIVER_WING)
 
 /** The windows custom event structure */
 struct SDL_SysWMmsg {
