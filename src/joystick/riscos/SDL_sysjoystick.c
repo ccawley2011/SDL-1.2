@@ -43,11 +43,35 @@
 #define Joystick_Read 0x43F40
 #endif
 
+struct joystick_dev_info
+{
+	unsigned char id;
+	unsigned char pad[3];
+	const char *dev_path;
+	const char *manufacturer;
+	const char *product;
+	const char *serial;
+	int num_axes;
+	int num_buttons;
+};
+
 struct joystick_hwdata 
 {
+	int id;
 	int joystate;
 };
 
+#define MAX_JOYSTICKS 255
+static char	*SYS_JoystickName[MAX_JOYSTICKS];
+
+#define HAS_STRUCT_ENTRY(st, m, size) (size > (offsetof(st, m) + sizeof(((st *)0)->m)))
+
+static char *CreateDefaultJoystickName(int id)
+{
+	char product[24];
+	SDL_snprintf(product, SDL_arraysize(product), "RISC OS Joystick %d", id);
+	return SDL_strdup(product);
+}
 
 /* Function to scan the system for joysticks.
  * This function should set SDL_numjoysticks to the number of available
@@ -57,29 +81,53 @@ struct joystick_hwdata
 int SDL_SYS_JoystickInit(void)
 {
 	_kernel_swi_regs regs;
+	const struct joystick_dev_info *info;
+	const Uint8 *data;
+	int size, items, i;
 
 	 /* Try to read joystick 0 */
 	regs.r[0] = 0;
-	if (_kernel_swi(Joystick_Read, &regs, &regs) == NULL)
+	if (_kernel_swi(Joystick_Read, &regs, &regs) != NULL)
 	{
-		/* Switch works so assume we've got a joystick */
+		/* Switch fails so it looks like there's no joystick here */
+		return 0;
+	}
+
+	regs.r[0] = 0x2FF;
+	if (_kernel_swi(Joystick_Read, &regs, &regs) != NULL)
+	{
+		/* The enumeration API is not available, so assume we only have one joystick. */
+		SYS_JoystickName[0] = CreateDefaultJoystickName(0);
 		return 1;
 	}
-	/* Switch fails so it looks like there's no joystick here */
 
-	return(0);
+	size = regs.r[0];
+	items = regs.r[1];
+	data = (const Uint8 *)regs.r[2];
+	for (i = 0; i < items; i++) {
+		info = (const struct joystick_dev_info *)data;
+
+		/* TODO: Should IDs, axis counts and button counts be stored ahead of time? */
+		if (HAS_STRUCT_ENTRY(struct joystick_dev_info, product, size) && info->product) {
+			SYS_JoystickName[i] = SDL_strdup(info->product);
+		} else {
+			SYS_JoystickName[i] = CreateDefaultJoystickName(i);
+		}
+		data += size;
+	}
+
+	return items;
 }
 
 /* Function to get the device-dependent name of a joystick */
 const char *SDL_SYS_JoystickName(int index)
 {
-	if (index == 0)
-	{
-		return "RISC OS Joystick 0";
+	if ( SYS_JoystickName[index] != NULL ) {
+		return(SYS_JoystickName[index]);
+	} else {
+		SDL_SetError("Unable to get name of joystick %d", index);
+		return(NULL);
 	}
-
-	SDL_SetError("No joystick available with that index");
-	return(NULL);
 }
 
 /* Function to open a joystick for use.
@@ -89,18 +137,44 @@ const char *SDL_SYS_JoystickName(int index)
  */
 int SDL_SYS_JoystickOpen(SDL_Joystick *joystick)
 {
+	const struct joystick_dev_info *info;
+	_kernel_swi_regs regs;
+	int size, items;
+
 	if(!(joystick->hwdata=SDL_malloc(sizeof(struct joystick_hwdata)))) {
 		SDL_OutOfMemory();
 		return -1;
 	}
 
-	/* Don't know how to get exact count of buttons so assume max of 8 for now */
+	/* If we can't get the exact count of buttons, assume max of 8 for now. */
 	joystick->nbuttons=8;
-
 	joystick->nhats=0;
 	joystick->nballs=0;
 	joystick->naxes=2;
 	joystick->hwdata->joystate=0;
+
+	regs.r[0] = 0x200 | joystick->index;
+	if (_kernel_swi(Joystick_Read, &regs, &regs) != NULL)
+	{
+		size = regs.r[0];
+		items = regs.r[1];
+		info = (const struct joystick_dev_info *)regs.r[2];
+
+		if (!size || !items) {
+			SDL_SetError("Invalid data returned from Joystick_Read");
+			return -1;
+		}
+
+		joystick->hwdata->id = info->id;
+		if (HAS_STRUCT_ENTRY(struct joystick_dev_info, num_buttons, size))
+			joystick->nbuttons = info->num_buttons;
+		if (HAS_STRUCT_ENTRY(struct joystick_dev_info, num_axes, size))
+			joystick->naxes = info->num_axes;
+	}
+	else
+	{
+		joystick->hwdata->id = joystick->index;
+	}
 
 	return 0;
 
@@ -114,7 +188,7 @@ int SDL_SYS_JoystickOpen(SDL_Joystick *joystick)
 void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 {
 	_kernel_swi_regs regs;
-	regs.r[0] = joystick->index;
+	regs.r[0] = joystick->hwdata->id;
 
 	if (_kernel_swi(Joystick_Read, &regs, &regs) == NULL)
 	{
@@ -160,17 +234,23 @@ void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 /* Function to close a joystick after use */
 void SDL_SYS_JoystickClose(SDL_Joystick *joystick)
 {
-	if(joystick->hwdata)
+	if (joystick->hwdata != NULL) {
+		/* free system specific hardware data */
 		SDL_free(joystick->hwdata);
-	return;
+		joystick->hwdata = NULL;
+	}
 }
 
 /* Function to perform any system-specific joystick related cleanup */
 void SDL_SYS_JoystickQuit(void)
 {
-	SDL_numjoysticks=0;
-
-	return;
+	int i;
+	for (i = 0; i < SDL_arraysize(SYS_JoystickName); i++) {
+		if ( SYS_JoystickName[i] != NULL ) {
+			SDL_free(SYS_JoystickName[i]);
+			SYS_JoystickName[i] = NULL;
+		}
+	}
 }
 
 #endif /* SDL_JOYSTICK_RISCOS */
