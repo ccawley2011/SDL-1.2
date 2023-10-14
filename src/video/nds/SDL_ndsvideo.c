@@ -334,6 +334,8 @@ static void NDS_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 	unsigned int xmult = this->screen->format->BytesPerPixel;
 	unsigned int rowsize;
 
+	DC_FlushRange(this->screen->pixels, this->screen->pitch * this->screen->h);
+
 	for (j = 0; j < numrects; j++, rects++)
 	{
 		/* Avoid crashes when attempting to DMA copy 0 bytes */
