@@ -110,11 +110,11 @@ WMcursor *NDS_CreateWMCursor(_THIS, Uint8 *data, Uint8 *mask, int w, int h, int 
 
 static void NDS_UpdateCursor(_THIS, WMcursor *wmcursor, int x, int y)
 {
-	if (wmcursor == NULL) {
-		oamSetHidden(&oamMain, 0, 1);
-	} else {
+	if (SDL_cursorstate & CURSOR_VISIBLE) {
 		oamSet(&oamMain, 0, x - wmcursor->hot_x, y - wmcursor->hot_y, 0, 0, wmcursor->size,
 		       SpriteColorFormat_16Color, wmcursor->data, -1, 0, 0, 0, 0, 0);
+	} else {
+		oamSetHidden(&oamMain, 0, 1);
 	}
 	oamUpdate(&oamMain);
 }
