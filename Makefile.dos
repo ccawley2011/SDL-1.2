@@ -16,7 +16,7 @@ LIBFILE = $(LIBHOME)/$(LIBNAME).lib
 # Create debug build or not?
 DEBUG=0
 # Enable Hermes MMX blitters?
-#HERMES=1
+HERMES=1
 
 CFLAGS = -bt=dos -d0 -zq -bm -5s -fp5 -fpi87 -sg -oeatxhn -ei
 # max warnings:
