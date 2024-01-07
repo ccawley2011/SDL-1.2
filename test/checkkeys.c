@@ -114,12 +114,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* When building for DOS, don't set the video mode so that we stay in text mode */
+#ifndef __MSDOS__
 	/* Set 640x480 video mode */
 	if ( SDL_SetVideoMode(640, 480, 0, videoflags) == NULL ) {
 		fprintf(stderr, "Couldn't set 640x480 video mode: %s\n",
 							SDL_GetError());
 		quit(2);
 	}
+#endif
 
 	/* Enable UNICODE translation for keyboard input */
 	SDL_EnableUNICODE(1);
@@ -139,6 +142,11 @@ int main(int argc, char *argv[])
 				break;
 			case SDL_KEYUP:
 				PrintKey(&event.key.keysym, 0);
+#ifdef __MSDOS__
+				if ( event.key.keysym.sym == SDLK_ESCAPE ) {
+					done = 1;
+				}
+#endif
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				/* Any button press quits the app... */
