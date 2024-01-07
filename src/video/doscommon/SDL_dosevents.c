@@ -45,6 +45,12 @@ static const SDLKey keymap[0x7F] = {
 /* 0x58 */      SDLK_F12
 };
 
+static const Uint8 mousemap[] = {
+    SDL_BUTTON_LEFT,
+    SDL_BUTTON_RIGHT,
+    SDL_BUTTON_MIDDLE
+};
+
 static DOS_EventData *eventdata = NULL;
 
 static void INTERRUPT_ATTRIBUTES DOS_KeyboardInterrupt()
@@ -64,8 +70,15 @@ static void INTERRUPT_ATTRIBUTES DOS_KeyboardInterrupt()
 
 int DOS_InitEvents(DOS_EventData *this)
 {
+    union REGS regs;
+
     eventdata = this;
     SDL_memset(this, 0, sizeof(*this));
+
+    regs.w.ax = 0;
+    int386(0x33, &regs, &regs);
+    this->mouse_on = regs.w.ax;
+    this->num_buttons = SDL_min(regs.w.bx, SDL_arraysize(mousemap));
 
     this->prev_kbd_int = _dos_getvect(9);
     _dos_setvect(9, DOS_KeyboardInterrupt);
@@ -92,8 +105,12 @@ void DOS_PumpEvents(DOS_EventData *this)
     const int write_pos = this->key_write_pos;
     int read_pos = this->key_read_pos;
     SDL_keysym keysym;
+    union REGS regs;
     int scancode;
     Uint8 state;
+    int buttons;
+    int changed;
+    int i;
 
     while (read_pos != write_pos)
     {
@@ -123,4 +140,24 @@ void DOS_PumpEvents(DOS_EventData *this)
     }
 
     this->key_read_pos = read_pos;
+
+    if (this->mouse_on) {
+        regs.w.ax = 0x0B;
+        int386(0x33, &regs, &regs);
+        if (regs.w.cx || regs.w.dx)
+            SDL_PrivateMouseMotion(0, 1, regs.w.cx, regs.w.dx);
+
+        regs.w.ax = 0x03;
+        int386(0x33, &regs, &regs);
+
+        buttons = regs.w.bx;
+        changed = buttons ^ this->prev_buttons;
+
+        for(i = 0; i < this->num_buttons; i++) {
+            if ((changed & (1 << i))) {
+                SDL_PrivateMouseButton((buttons & (1 << i)) ? SDL_PRESSED : SDL_RELEASED, mousemap[i], 0, 0);
+            }
+        }
+        this->prev_buttons = buttons;
+    }
 }

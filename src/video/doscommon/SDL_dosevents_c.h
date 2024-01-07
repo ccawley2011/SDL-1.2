@@ -35,6 +35,10 @@ typedef struct {
     int key_write_pos;
     int key_read_pos;
     SDL_bool special;
+
+    int mouse_on;
+    int num_buttons;
+    int prev_buttons;
 } DOS_EventData;
 
 extern int  DOS_InitEvents(DOS_EventData *this);
