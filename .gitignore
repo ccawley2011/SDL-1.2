@@ -52,6 +52,9 @@ Release
 *.suo
 *.sdf
 
+# for OpenWatcom
+*.lbc
+
 test/stdout.txt
 test/stderr.txt
 test/checkkeys
